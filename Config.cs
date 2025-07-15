@@ -12,7 +12,7 @@ namespace SicarianInfiltrator
         public static ConfigEntry<float> damageCoefficient = configFile.Bind(FireFlechetName, DamageCoefficientName, 0.4f, "").RegisterConfig();
         public static ConfigEntry<float> procCoefficient = configFile.Bind(FireFlechetName, ProcCoefficientName, 1f, "").RegisterConfig();
         public static ConfigEntry<float> shockingTimer = configFile.Bind(FireFlechetName, "Shocking Timer", 3f, "").RegisterConfig();
-        public static ConfigEntry<int> shockingAmount = configFile.Bind(FireFlechetName, "Shocking Amount", 25, "").RegisterConfig();
+        public static ConfigEntry<int> shockingAmount = configFile.Bind(FireFlechetName, "Shocking Amount", 25, "Amount needed to Shock the target").RegisterConfig();
         public static ConfigEntry<float> shockingDuration = configFile.Bind(FireFlechetName, "Shock Duration", 1f, "").RegisterConfig();
         public static ConfigEntry<float> maxDistance = configFile.Bind(FireFlechetName, "Dart Distance", 128f, "").RegisterConfig();
         public static ConfigEntry<float> spreadBloomValue = configFile.Bind(FireFlechetName, "Spread Bloom", 0.25f, "").RegisterConfig();

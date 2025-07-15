@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using static SicarianInfiltrator.Utils;
 using static SicarianInfiltrator.Keywords;
+using static SicarianInfiltrator.Language;
 
 
 namespace SicarianInfiltrator
@@ -16,12 +17,13 @@ namespace SicarianInfiltrator
     {
         public static AssetBundle assetBundle;
         public static GameObject SicarianInfiltratorBody;
+        public static CharacterBody SicarianInfiltratorBodyComponent;
         public static SurvivorDef SicarianInfiltratorSurvivor;
         public static GameObject SicarianInfiltratorEmote;
         public static GameObject TaserSlash;
         public static GameObject Slam;
         public static GameObject Explosion;
-        public static Material IndicatorMaterial;
+        public static Material RoboballMaterial;
         public static GameObject Indicator;
         public static GameObject ARCGrenadeProjectile;
         public static SkillDef Untargetable;
@@ -56,15 +58,18 @@ namespace SicarianInfiltrator
             }
             SicarianInfiltratorBody = assetBundle.LoadAsset<GameObject>("Assets/SicarianInfiltrator/Character/SicarianInfiltratorBody.prefab").RegisterCharacterBody();
             SicarianInfiltratorSurvivor = assetBundle.LoadAsset<SurvivorDef>("Assets/SicarianInfiltrator/Character/SicarianInfiltrator.asset").RegisterSurvivor();
-            CharacterBody demoCharacterBody = SicarianInfiltratorBody.GetComponent<CharacterBody>();
-            demoCharacterBody.preferredPodPrefab = LegacyResourcesAPI.Load<GameObject>("Prefabs/NetworkedObjects/SurvivorPod");//Addressables.LoadAssetAsync<GameObject>("RoR2/Base/SurvivorPod/SurvivorPod.prefab").WaitForCompletion();
-            demoCharacterBody._defaultCrosshairPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/UI/StandardCrosshair.prefab").WaitForCompletion();
+            SicarianInfiltratorBodyComponent = SicarianInfiltratorBody.GetComponent<CharacterBody>();
+            SicarianInfiltratorBodyComponent.preferredPodPrefab = LegacyResourcesAPI.Load<GameObject>("Prefabs/NetworkedObjects/SurvivorPod");//Addressables.LoadAssetAsync<GameObject>("RoR2/Base/SurvivorPod/SurvivorPod.prefab").WaitForCompletion();
+            SicarianInfiltratorBodyComponent._defaultCrosshairPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/UI/StandardCrosshair.prefab").WaitForCompletion();
+            GameObject gameObject = SicarianInfiltratorBody.GetComponent<ModelLocator>().modelTransform.gameObject;
+            gameObject.GetComponent<FootstepHandler>().footstepDustPrefab = LegacyResourcesAPI.Load<GameObject>("Prefabs/GenericFootstepDust");
             SicarianInfiltratorEmote = assetBundle.LoadAsset<GameObject>("Assets/SicarianInfiltrator/Character/SicarianInfiltratorEmote.prefab");
             if (Main.emotesEnabled) ModCompatabilities.EmoteCompatability.Init();
             TaserSlash = assetBundle.LoadAsset<GameObject>("Assets/SicarianInfiltrator/Effects/SwingEffect.prefab");
             Slam = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/BeetleGuard/BeetleGuardGroundSlam.prefab").WaitForCompletion();
             Explosion = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Toolbot/OmniExplosionVFXToolbotQuick.prefab").WaitForCompletion();
             Indicator = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Huntress/HuntressArrowRainIndicator.prefab").WaitForCompletion();
+            RoboballMaterial = Addressables.LoadAssetAsync<Material>("RoR2/Base/RoboBallBoss/matSummonRoboBall.mat").WaitForCompletion();
             Untargetable = assetBundle.LoadAsset<SkillDef>("Assets/SicarianInfiltrator/Skills/UntargetablePassive.asset").RegisterSkillDef(UntargetableName);
             FireFlechet = assetBundle.LoadAsset<SkillDef>("Assets/SicarianInfiltrator/Skills/FireFlechet.asset").RegisterSkillDef(FireFlechetName);
             TaserGoad = assetBundle.LoadAsset<SkillDef>("Assets/SicarianInfiltrator/Skills/TaserGoad.asset").RegisterSkillDef(SwingTaserName);

@@ -90,6 +90,7 @@ namespace SicarianInfiltrator
     }
     public static class Keywords
     {
+        public const string BodyName = "Sicarian Infiltrator";
         public const string UntargetableName = "Untargetable";
         public const string FireFlechetName = "Flechet";
         public const string SwingTaserName = "Taser Goad";

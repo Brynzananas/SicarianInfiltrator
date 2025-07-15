@@ -5,6 +5,7 @@ using R2API;
 using R2API.Utils;
 using RoR2.ContentManagement;
 using BepInEx.Configuration;
+using RoR2.UI;
 
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 [assembly: HG.Reflection.SearchableAttribute.OptIn]

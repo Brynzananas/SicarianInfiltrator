@@ -27,6 +27,8 @@ namespace SicarianInfiltrator
         public static float maxIncreasedSpread => FireFlechetConfig.maxIncreasedSpread.Value;
         public static float minSpread => FireFlechetConfig.minSpread.Value;
         public static int bulletCount => FireFlechetConfig.bulletCount.Value;
+        public static float animationDuration = 1.5f;
+        public static float animationTransition = 0.1f;
         public float duration;
         public float stopwatch;
         public void FireBullet(Ray aimRay, int bulletCount, float spreadPitchScale, float spreadYawScale)
@@ -52,7 +54,7 @@ namespace SicarianInfiltrator
                     maxDistance = maxDistance,
                     radius = 0.1f,
                     isCrit = base.RollCrit(),
-                    muzzleName = null,
+                    muzzleName = "Muzzle",
                     minSpread = minSpread,
                     hitEffectPrefab = BaseNailgunState.hitEffectPrefab,
                     maxSpread = base.characterBody.spreadBloomAngle,
@@ -73,6 +75,7 @@ namespace SicarianInfiltrator
                 base.characterBody.AddSpreadBloom(spreadBloomValue);
             }
             Util.PlaySound(BaseNailgunState.fireSoundString, base.gameObject);
+            PlayAnimation("LeftHand, Override", "Shoot", "Shoot.playbackRate", animationDuration, animationTransition);
             EffectManager.SimpleMuzzleFlash(BaseNailgunState.muzzleFlashPrefab, base.gameObject, BaseNailgunState.muzzleName, false);
         }
         public float CalculateDuration()
@@ -116,8 +119,10 @@ namespace SicarianInfiltrator
     }
     public abstract class BaseSwingTaserGoad : BaseSkillState
     {
-        public abstract float baseDuration {  get; }
-        public static Vector3 effectScale = new Vector3(1f, 1f, 1f);
+        public abstract float baseDuration { get; }
+        public abstract float damageCoefficient {get;}
+        public abstract float procCoefficient { get; }
+        public abstract string hitboxName { get; }
         public static float force => TaserGoadConfig.force.Value;
         public static float baseAcceleration => TaserGoadConfig.baseAcceleration.Value;
         public static float baseCurrent => TaserGoadConfig.baseCurrent.Value;
@@ -132,10 +137,12 @@ namespace SicarianInfiltrator
         public float current;
         public bool armorAdded;
         public Vector3 currentVector;
+        public bool crit;
         public abstract void SetNextState();
         public override void OnEnter()
         {
             base.OnEnter();
+            SetupOverlapAttack();
             duration = baseDuration / attackSpeedStat;
             acceleration = moveSpeedStat * baseAcceleration;
             current = baseCurrent;
@@ -161,6 +168,26 @@ namespace SicarianInfiltrator
                 characterBody.RemoveBuff(RoR2Content.Buffs.SmallArmorBoost);
             }
         }
+        public void SetupOverlapAttack()
+        {
+            OverlapAttack overlapAttack = new OverlapAttack();
+            overlapAttack.attacker = base.gameObject;
+            overlapAttack.damage = characterBody.damage;
+            overlapAttack.damageColorIndex = DamageColorIndex.Default;
+            overlapAttack.damageType = new DamageTypeCombo(DamageType.Shock5s, DamageTypeExtended.Generic, DamageSource.Secondary);
+            overlapAttack.forceVector = transform.forward;
+            overlapAttack.hitBoxGroup = null;
+            //overlapAttack.hitEffectPrefab = this.hitEffectPrefab;
+            //NetworkSoundEventDef networkSoundEventDef = this.impactSound;
+            //overlapAttack.impactSound = ((networkSoundEventDef != null) ? networkSoundEventDef.index : NetworkSoundEventIndex.Invalid);
+            overlapAttack.inflictor = base.gameObject;
+            overlapAttack.isCrit = false;
+            overlapAttack.procChainMask = default(ProcChainMask);
+            overlapAttack.pushAwayForce = force;
+            overlapAttack.procCoefficient = 1f;
+            overlapAttack.teamIndex = base.GetTeam();
+            this.overlapAttack = overlapAttack;
+        }
         public void Swing(Vector3 vector3, float damageMultiplier, bool crit, float procCoefficient, string hitboxName)
         {
             if (base.isAuthority)
@@ -168,29 +195,14 @@ namespace SicarianInfiltrator
                 this.hitBoxGroup = base.FindHitBoxGroup(hitboxName);
                 if (this.hitBoxGroup)
                 {
-                    OverlapAttack overlapAttack = new OverlapAttack();
-                    overlapAttack.attacker = base.gameObject;
-                    overlapAttack.damage = damageMultiplier * characterBody.damage;
-                    overlapAttack.damageColorIndex = DamageColorIndex.Default;
-                    overlapAttack.damageType = new DamageTypeCombo(DamageType.Shock5s, DamageTypeExtended.Generic, DamageSource.Secondary);
-                    overlapAttack.forceVector = vector3;
+                    overlapAttack.forceVector= vector3;
                     overlapAttack.hitBoxGroup = this.hitBoxGroup;
-                    //overlapAttack.hitEffectPrefab = this.hitEffectPrefab;
-                    //NetworkSoundEventDef networkSoundEventDef = this.impactSound;
-                    //overlapAttack.impactSound = ((networkSoundEventDef != null) ? networkSoundEventDef.index : NetworkSoundEventIndex.Invalid);
-                    overlapAttack.inflictor = base.gameObject;
+                    overlapAttack.damage = characterBody.damage * damageMultiplier;
                     overlapAttack.isCrit = crit;
-                    overlapAttack.procChainMask = default(ProcChainMask);
-                    overlapAttack.pushAwayForce = force;
                     overlapAttack.procCoefficient = procCoefficient;
-                    overlapAttack.teamIndex = base.GetTeam();
                     overlapAttack.Fire();
-                    this.overlapAttack = overlapAttack;
                 }
             }
-            GameObject effect = GameObject.Instantiate(Assets.TaserSlash);
-            effect.transform.SetParent(modelLocator.modelTransform, false);
-            effect.transform.localScale = effectScale;
         }
         public override void FixedUpdate()
         {
@@ -207,6 +219,7 @@ namespace SicarianInfiltrator
                 {
                     rigidbody.velocity = direction * characterBody.moveSpeed * current;
                 }
+                if (fixedAge < baseDuration) Swing(direction, damageCoefficient, crit, procCoefficient, hitboxName);
                 if (fixedAge >= duration && !IsKeyDownAuthority()) SetNextState();
             }
         }
@@ -217,31 +230,52 @@ namespace SicarianInfiltrator
     }
     public class SwingTaserGoad : BaseSwingTaserGoad
     {
-        public static float damageCoefficient => TaserGoadConfig.firstSwingDamageCoefficient.Value;
-        public static float procCoefficient => TaserGoadConfig.firstSwingProcCoefficient.Value;
-        public bool crit;
+        public override float damageCoefficient => TaserGoadConfig.firstSwingDamageCoefficient.Value;
+        public override float procCoefficient => TaserGoadConfig.firstSwingProcCoefficient.Value;
         public override float baseDuration => TaserGoadConfig.firstSwingBaseDuration.Value;
+        public override string hitboxName => "TaserClose";
+        public static Vector3 effectScale = new Vector3(1f, 1f, 1f);
+        public bool end = true;
         public override void OnEnter()
         {
             base.OnEnter();
             crit = RollCrit();
-            Swing(direction, damageCoefficient, crit, procCoefficient, "TaserClose");
+            PlayAnimation("UpperBody, Override", "Slash1");
+            GameObject effect = GameObject.Instantiate(Assets.TaserSlash);
+            effect.transform.SetParent(modelLocator.modelTransform, false);
+            effect.transform.localScale = effectScale;
+        }
+        public override void OnExit()
+        {
+            base.OnExit();
+            if(end)
+            PlayAnimation("UpperBody, Override", "BufferEmpty");
         }
         public override void SetNextState()
         {
+            end = false;
             outer.SetNextState(new SwingTaserGoadSecond { activatorSkillSlot = activatorSkillSlot, crit = crit});
         }
     }
     public class SwingTaserGoadSecond : BaseSwingTaserGoad
     {
-        public static float damageCoefficient => TaserGoadConfig.secondSwingDamageCoefficient.Value;
-        public static float procCoefficient => TaserGoadConfig.secondSwingProcCoefficient.Value;
-        public bool crit;
+        public override float damageCoefficient => TaserGoadConfig.secondSwingDamageCoefficient.Value;
+        public override float procCoefficient => TaserGoadConfig.secondSwingProcCoefficient.Value;
         public override float baseDuration => TaserGoadConfig.secondSwingBaseDuration.Value;
+        public override string hitboxName => "TaserFar";
+        public static Vector3 effectScale = new Vector3(-1f, 1f, 1.5f);
         public override void OnEnter()
         {
             base.OnEnter();
-            Swing(direction, damageCoefficient, crit, procCoefficient, "TaserFar");
+            PlayAnimation("UpperBody, Override", "Slash2");
+            GameObject effect = GameObject.Instantiate(Assets.TaserSlash);
+            effect.transform.SetParent(modelLocator.modelTransform, false);
+            effect.transform.localScale = effectScale;
+        }
+        public override void OnExit()
+        {
+            base.OnExit();
+            //PlayAnimation("UpperBody, Override", "BufferEmpty");
         }
         public override void SetNextState()
         {
@@ -290,6 +324,8 @@ namespace SicarianInfiltrator
         public override void OnEnter()
         {
             base.OnEnter();
+            PlayAnimation("Body", "Jump");
+            PlayAnimation("FullBody, Additive", "FlipEnter");
             indicator = GameObject.Instantiate(Assets.Indicator);
             indicator.transform.localScale = Vector3.zero;
             PlaceIndicator();
@@ -322,6 +358,7 @@ namespace SicarianInfiltrator
         public override void OnExit()
         {
             base.OnExit();
+            PlayAnimation("FullBody, Additive", "FlipExit");
             if (NetworkServer.active)
                 characterBody.RemoveBuff(JunkContent.Buffs.IgnoreFallDamage);
             if (characterMotor)

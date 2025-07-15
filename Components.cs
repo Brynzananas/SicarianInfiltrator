@@ -66,11 +66,13 @@ namespace SicarianInfiltrator
     public class UntargetableComponent : MonoBehaviour
     {
         public CharacterBody characterBody;
+        public CharacterModel characterModel;
         public Inventory inventory;
         public static float shortDamageDuration => UntargetableConfig.shortDamageDuration.Value;
         public void Awake()
         {
             characterBody = GetComponent<CharacterBody>();
+            characterModel = characterBody && characterBody.modelLocator && characterBody.modelLocator.modelTransform ? characterBody.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
             inventory = characterBody.inventory;
             work = characterBody && NetworkServer.active;
         }
@@ -87,12 +89,26 @@ namespace SicarianInfiltrator
                 characterBody.AddBuff(RoR2Content.Buffs.Cloak);
                 characterBody.ClearTimedBuffs(Assets.ShortDamage);
                 characterBody.AddBuff(Assets.ShortDamage);
+                if (characterModel) AddOverlay();
                 return;
             }
+            if (characterModel) AddOverlay();
             characterBody.RemoveBuff(RoR2Content.Buffs.Cloak);
             characterBody.RemoveBuff(RoR2Content.Buffs.CloakSpeed);
             characterBody.SetBuffCount(Assets.ShortDamage.buffIndex, 0);
             characterBody.AddTimedBuff(Assets.ShortDamage, shortDamageDuration);
+        }
+        public void AddOverlay()
+        {
+            TemporaryOverlay temporaryOverlay = gameObject.AddComponent<TemporaryOverlay>();
+            temporaryOverlay.alphaCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+            temporaryOverlay.animateShaderAlpha = true;
+            temporaryOverlay.destroyComponentOnEnd = true;
+            temporaryOverlay.duration = shortDamageDuration;
+            temporaryOverlay.originalMaterial = Assets.RoboballMaterial;
+            temporaryOverlay.inspectorCharacterModel = characterModel;
+            //temporaryOverlay.Start();
+            temporaryOverlay.AddToCharacerModel(characterModel);
         }
         private void OnDisable()
         {

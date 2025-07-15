@@ -13,7 +13,14 @@ namespace SicarianInfiltrator
         {
             On.RoR2.CharacterBody.HandleCascadingBuffs += CharacterBody_HandleCascadingBuffs;
             On.RoR2.HealthComponent.TakeDamageProcess += HealthComponent_TakeDamageProcess;
+            RoR2Application.onLoadFinished += sus;
         }
+
+        private static void sus()
+        {
+            Language.Init();
+        }
+
         public static float MaxShortDamageMultipler => UntargetableConfig.shortDamageMultiplier.Value;
         public static float MaxShortDamageMaxMultipler => UntargetableConfig.shortDamageMaxMultiplier.Value;
         public static float MaxShortDamageTotal => UntargetableConfig.shortDamageTotalMultiplier.Value;

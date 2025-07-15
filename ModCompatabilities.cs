@@ -5,6 +5,7 @@ using RiskOfOptions;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RoR2;
 
 namespace SicarianInfiltrator
 {
@@ -16,23 +17,27 @@ namespace SicarianInfiltrator
             public static void Init()
             {
                 CustomEmotesAPI.ImportArmature(Assets.SicarianInfiltratorBody, Assets.SicarianInfiltratorEmote);
+                Assets.SicarianInfiltratorEmote.GetComponent<BoneMapper>().scale = 1.0f;
                 CustomEmotesAPI.animChanged += CustomEmotesAPI_animChanged;
             }
             private static void CustomEmotesAPI_animChanged(string newAnimation, BoneMapper mapper)
             {
-                //if (mapper.name == "HeroEmotes")
-                //{
-                //    ProfessionalBodyComponent professionalBodyComponent = mapper.mapperBody && mapper.mapperBody as ProfessionalBodyComponent ? mapper.mapperBody as ProfessionalBodyComponent : null;
-                //    if (newAnimation == "none")
-                //    {
-                //        if (professionalBodyComponent != null) professionalBodyComponent.professionalCharacterComponent.firstPersonCamera.enabled = true;
-                //    }
-                //    else
-                //    {
-                //        if (professionalBodyComponent != null) professionalBodyComponent.professionalCharacterComponent.firstPersonCamera.enabled = false;
-                //    }
+                if (mapper.name == "SicarianInfiltratorEmote")
+                {
+                    ChildLocator childLocator = mapper.transform.parent.GetComponent<ChildLocator>();
+                    if (childLocator)
+                        if (newAnimation == "none")
+                        {
+                            childLocator.FindChild("Gun")?.gameObject.SetActive(true);
+                            childLocator.FindChild("TaserGoad")?.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            childLocator.FindChild("Gun")?.gameObject.SetActive(false);
+                            childLocator.FindChild("TaserGoad")?.gameObject.SetActive(false);
+                        }
 
-                //}
+                }
             }
         }
         public class RiskOfOptionsCompatability
