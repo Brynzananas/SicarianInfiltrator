@@ -35,6 +35,8 @@ namespace SicarianInfiltrator
             if (projectileImpactExplosion && throwARCGrenadeState != null)
             {
                 indicator = throwARCGrenadeState.indicator;
+                if(throwARCGrenadeState.characterBody)
+                projectileController.rigidbody.velocity *= throwARCGrenadeState.characterBody.attackSpeed;
                 projectileImpactExplosion.lifetime = Trajectory.CalculateGroundTravelTime(projectileController.rigidbody.velocity.magnitude, throwARCGrenadeState.distance);
                 if (projectileController.rigidbody.useGravity)
                 {
@@ -74,53 +76,56 @@ namespace SicarianInfiltrator
             characterBody = GetComponent<CharacterBody>();
             characterModel = characterBody && characterBody.modelLocator && characterBody.modelLocator.modelTransform ? characterBody.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
             inventory = characterBody.inventory;
-            work = characterBody && NetworkServer.active;
+            serverActive = NetworkServer.active;
         }
         private void SetProvidingBuff(bool shouldProvide)
         {
-            if (shouldProvide == providing)
+            if (shouldProvide == providing || characterBody == null)
             {
                 return;
             }
             providing = shouldProvide;
             if (providing)
             {
-                characterBody.AddBuff(RoR2Content.Buffs.CloakSpeed);
-                characterBody.AddBuff(RoR2Content.Buffs.Cloak);
-                characterBody.ClearTimedBuffs(Assets.ShortDamage);
-                characterBody.AddBuff(Assets.ShortDamage);
-                if (characterModel) AddOverlay();
+                if (serverActive)
+                {
+                    characterBody.AddBuff(RoR2Content.Buffs.CloakSpeed);
+                    characterBody.AddBuff(RoR2Content.Buffs.Cloak);
+                    characterBody.ClearTimedBuffs(Assets.ShortDamage);
+                    characterBody.AddBuff(Assets.ShortDamage);
+                }
+                if (characterModel) AddOverlay(shortDamageDuration);
                 return;
             }
-            if (characterModel) AddOverlay();
-            characterBody.RemoveBuff(RoR2Content.Buffs.Cloak);
-            characterBody.RemoveBuff(RoR2Content.Buffs.CloakSpeed);
-            characterBody.SetBuffCount(Assets.ShortDamage.buffIndex, 0);
-            characterBody.AddTimedBuff(Assets.ShortDamage, shortDamageDuration);
+            if (characterModel) AddOverlay(shortDamageDuration);
+            if (serverActive)
+            {
+                characterBody.RemoveBuff(RoR2Content.Buffs.Cloak);
+                characterBody.RemoveBuff(RoR2Content.Buffs.CloakSpeed);
+                characterBody.SetBuffCount(Assets.ShortDamage.buffIndex, 0);
+                characterBody.AddTimedBuff(Assets.ShortDamage, shortDamageDuration);
+            }
         }
-        public void AddOverlay()
+        public void AddOverlay(float duration)
         {
             TemporaryOverlay temporaryOverlay = gameObject.AddComponent<TemporaryOverlay>();
             temporaryOverlay.alphaCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
             temporaryOverlay.animateShaderAlpha = true;
             temporaryOverlay.destroyComponentOnEnd = true;
-            temporaryOverlay.duration = shortDamageDuration;
+            temporaryOverlay.duration = duration;
             temporaryOverlay.originalMaterial = Assets.RoboballMaterial;
             temporaryOverlay.inspectorCharacterModel = characterModel;
-            //temporaryOverlay.Start();
             temporaryOverlay.AddToCharacerModel(characterModel);
         }
         private void OnDisable()
         {
-            if (work)
-                SetProvidingBuff(false);
+            SetProvidingBuff(false);
         }
         private void FixedUpdate()
         {
-            if (work)
-                SetProvidingBuff(characterBody.outOfCombat);
+            SetProvidingBuff(characterBody.outOfCombat);
         }
-        public bool work;
+        public bool serverActive;
         public bool providing;
     }
     [CreateAssetMenu(menuName = "RoR2/SkillDef/UntargetableSkillDef")]

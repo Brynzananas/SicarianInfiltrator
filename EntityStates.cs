@@ -22,9 +22,11 @@ namespace SicarianInfiltrator
         public static float force => FireFlechetConfig.force.Value;
         public static float baseDuration => FireFlechetConfig.baseDuration.Value;
         public static float fireRateIncreaseOverTime => FireFlechetConfig.fireRateIncreaseOverTime.Value;
-        public static float spreadIncreaseOverTime => FireFlechetConfig.spreadIncreaseOverTime.Value;
+        public static float horizontalSpreadIncreaseOverTime => FireFlechetConfig.horizontalSpreadIncreaseOverTime.Value;
+        public static float verticalSpreadIncreaseOverTime => FireFlechetConfig.verticalSpreadIncreaseOverTime.Value;
         public static float maxIncreasedFireRate => FireFlechetConfig.maxIncreasedFireRate.Value;
-        public static float maxIncreasedSpread => FireFlechetConfig.maxIncreasedSpread.Value;
+        public static float maxIncreasedHorizontalSpread => FireFlechetConfig.maxIncreasedHorizontalSpread.Value;
+        public static float maxIncreasedVerticalSpread => FireFlechetConfig.maxIncreasedVerticalSpread.Value;
         public static float minSpread => FireFlechetConfig.minSpread.Value;
         public static int bulletCount => FireFlechetConfig.bulletCount.Value;
         public static float animationDuration = 1.5f;
@@ -76,6 +78,7 @@ namespace SicarianInfiltrator
             }
             Util.PlaySound(BaseNailgunState.fireSoundString, base.gameObject);
             PlayAnimation("LeftHand, Override", "Shoot", "Shoot.playbackRate", animationDuration, animationTransition);
+            PlayAnimation("LeftHand, Additive", "Shoot");
             EffectManager.SimpleMuzzleFlash(BaseNailgunState.muzzleFlashPrefab, base.gameObject, BaseNailgunState.muzzleName, false);
         }
         public float CalculateDuration()
@@ -94,6 +97,14 @@ namespace SicarianInfiltrator
             this.stopwatch += base.GetDeltaTime();
             if (this.stopwatch >= duration)
             {
+                if (!base.isAuthority || (base.IsKeyDownAuthority() && activatorSkillSlot.stock > 0))
+                {
+                }
+                else
+                {
+                    this.outer.SetStateToMain();
+                    return;
+                }
                 int fireAmount = 0;
                 while (this.stopwatch >= duration)
                 {
@@ -103,13 +114,8 @@ namespace SicarianInfiltrator
                 Ray aimRay = base.GetAimRay();
                 TrajectoryAimAssist.ApplyTrajectoryAimAssist(ref aimRay, maxDistance, base.gameObject, 1f);
                 Vector3 direction = aimRay.direction;
-                FireBullet(aimRay, fireAmount * bulletCount, 1f, MathF.Min(fixedAge * spreadIncreaseOverTime * characterBody.attackSpeed, maxIncreasedSpread));
+                FireBullet(aimRay, fireAmount * bulletCount, MathF.Min(fixedAge * verticalSpreadIncreaseOverTime * characterBody.attackSpeed, maxIncreasedVerticalSpread), MathF.Min(fixedAge * horizontalSpreadIncreaseOverTime * characterBody.attackSpeed, maxIncreasedHorizontalSpread));
                 duration = CalculateDuration();
-                if (!base.isAuthority || (base.IsKeyDownAuthority() && activatorSkillSlot.stock > 0))
-                {
-                    return;
-                }
-                this.outer.SetNextStateToMain();
             }
         }
         public override InterruptPriority GetMinimumInterruptPriority()
@@ -235,12 +241,14 @@ namespace SicarianInfiltrator
         public override float baseDuration => TaserGoadConfig.firstSwingBaseDuration.Value;
         public override string hitboxName => "TaserClose";
         public static Vector3 effectScale = new Vector3(1f, 1f, 1f);
+        public static string enterSound = "Play_loader_m1_swing";
         public bool end = true;
         public override void OnEnter()
         {
             base.OnEnter();
             crit = RollCrit();
-            PlayAnimation("UpperBody, Override", "Slash1");
+            PlayAnimation("UpperBody, Override", "Slash1", "Slash.playbackRate", 0.583f);
+            Util.PlaySound(enterSound, base.gameObject);
             GameObject effect = GameObject.Instantiate(Assets.TaserSlash);
             effect.transform.SetParent(modelLocator.modelTransform, false);
             effect.transform.localScale = effectScale;
@@ -248,12 +256,10 @@ namespace SicarianInfiltrator
         public override void OnExit()
         {
             base.OnExit();
-            if(end)
-            PlayAnimation("UpperBody, Override", "BufferEmpty");
+            PlayAnimation("UpperBody, Override", "BufferEmpty", "Slash.playbackRate", 1f, 1f);
         }
         public override void SetNextState()
         {
-            end = false;
             outer.SetNextState(new SwingTaserGoadSecond { activatorSkillSlot = activatorSkillSlot, crit = crit});
         }
     }
@@ -264,10 +270,12 @@ namespace SicarianInfiltrator
         public override float baseDuration => TaserGoadConfig.secondSwingBaseDuration.Value;
         public override string hitboxName => "TaserFar";
         public static Vector3 effectScale = new Vector3(-1f, 1f, 1.5f);
+        public static string enterSound = "Play_loader_m1_swing";
         public override void OnEnter()
         {
             base.OnEnter();
-            PlayAnimation("UpperBody, Override", "Slash2");
+            PlayAnimation("UpperBody, Override", "Slash2", "Slash.playbackRate", 0.583f);
+            Util.PlaySound(enterSound, base.gameObject);
             GameObject effect = GameObject.Instantiate(Assets.TaserSlash);
             effect.transform.SetParent(modelLocator.modelTransform, false);
             effect.transform.localScale = effectScale;
@@ -293,7 +301,10 @@ namespace SicarianInfiltrator
         public static float gravityScale => HelmetSlamConfig.gravityScale.Value;
         public static float walkSpeedPenalty => HelmetSlamConfig.walkSpeedPenalty.Value;
         public static float indicatorSmoothTime = 0.2f;
+        public static float timeUntilFixedUpdateCheck = 0.1f;
         public static BlastAttack.FalloffModel slamDamageFalloff => HelmetSlamConfig.slamDamageFalloff.Value;
+        public static string enterSound = "Play_loader_R_variant_activate";
+        public static string exitSound = "Play_loader_R_variant_slam";
         public float gravityScaleDelta;
         public float walkSpeedPenaltyDelta;
         public bool fire = true;
@@ -324,8 +335,12 @@ namespace SicarianInfiltrator
         public override void OnEnter()
         {
             base.OnEnter();
-            PlayAnimation("Body", "Jump");
-            PlayAnimation("FullBody, Additive", "FlipEnter");
+            Util.PlaySound(enterSound, base.gameObject);
+            //PlayAnimation("FullBody, Override", "Flip");
+            int layerIndex = modelAnimator.GetLayerIndex("Body");
+            if(layerIndex >= 0)
+            modelAnimator.CrossFadeInFixedTime("Jump", smoothingParameters.intoJumpTransitionTime, layerIndex);
+            PlayAnimation("FullBody, Additive", "FlipEnter", "Slam.playbackRate", 0.5f);
             indicator = GameObject.Instantiate(Assets.Indicator);
             indicator.transform.localScale = Vector3.zero;
             PlaceIndicator();
@@ -340,6 +355,7 @@ namespace SicarianInfiltrator
                 characterBody.AddBuff(JunkContent.Buffs.IgnoreFallDamage);
                 gravityScaleDelta = characterMotor.gravityScale;
                 characterMotor.gravityScale = gravityScale;
+                characterMotor.airControl *= attackSpeedStat;
                 walkSpeedPenaltyDelta = characterMotor.walkSpeedPenaltyCoefficient;
                 characterMotor.walkSpeedPenaltyCoefficient = walkSpeedPenalty;
             }
@@ -348,6 +364,12 @@ namespace SicarianInfiltrator
                 outer.SetNextStateToMain();
             }
         }
+        public override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            if (fixedAge >= timeUntilFixedUpdateCheck && isAuthority && characterMotor && characterMotor.isGrounded) FireExplosion();
+        }
+        
         public override void Update()
         {
             base.Update();
@@ -358,18 +380,22 @@ namespace SicarianInfiltrator
         public override void OnExit()
         {
             base.OnExit();
-            PlayAnimation("FullBody, Additive", "FlipExit");
+            //PlayAnimation("FullBody, Additive", "FlipExit");
+            PlayAnimation("FullBody, Additive", "BufferEmpty", "Slam.playbackRate", 0.1f, 0f);
             if (NetworkServer.active)
                 characterBody.RemoveBuff(JunkContent.Buffs.IgnoreFallDamage);
             if (characterMotor)
             {
+                if(isAuthority) characterMotor.onHitGroundAuthority -= CharacterMotor_onHitGroundAuthority;
+                characterMotor.airControl /= attackSpeedStat;
                 characterMotor.gravityScale = gravityScaleDelta;
                 characterMotor.walkSpeedPenaltyCoefficient = walkSpeedPenaltyDelta;
             }
             if(indicator) Destroy(indicator);
         }
-        public void FireExplosion(ref CharacterMotor.HitGroundInfo hitGroundInfo)
+        public void FireExplosion()
         {
+            if (!fire || !isAuthority) return;
             BlastAttack blasAttack = new BlastAttack
             {
                 attacker = base.gameObject,
@@ -377,7 +403,7 @@ namespace SicarianInfiltrator
                 teamIndex = teamComponent ? teamComponent.teamIndex : TeamIndex.None,
                 baseDamage = characterBody.damage * damageCoefficient,
                 baseForce = force * 0.2f,
-                position = hitGroundInfo.position,
+                position = characterBody.footPosition,
                 radius = radius,
                 falloffModel = BlastAttack.FalloffModel.Linear,
                 bonusForce = gravity * -1f * bonusForce,
@@ -392,11 +418,17 @@ namespace SicarianInfiltrator
                 scale = blasAttack.radius
             };
             EffectManager.SpawnEffect(Assets.Slam, effectData, true);
+            EffectData effectData2 = new EffectData
+            {
+                origin = blasAttack.position,
+                scale = blasAttack.radius
+            };
+            EffectManager.SpawnEffect(Assets.LoaderSlam, effectData2, true);
+            outer.SetNextStateToMain();
         }
         private void CharacterMotor_onHitGroundAuthority(ref CharacterMotor.HitGroundInfo hitGroundInfo)
         {
-            if (fire) FireExplosion(ref hitGroundInfo);
-            outer.SetNextStateToMain();
+            FireExplosion();
         }
         public override InterruptPriority GetMinimumInterruptPriority()
         {
@@ -411,6 +443,7 @@ namespace SicarianInfiltrator
         public static float baseDistance => ThrowARCGrenadeConfig.baseDistance.Value;
         public static float indicatorSmoothTime = 0.2f;
         public static GameObject projectile = Assets.ARCGrenadeProjectile;
+        public static string throwSound = "Play_commando_M2_grenade_throw";
         public bool fire = true;
         public GameObject indicator;
         public float stopwatch;
@@ -423,6 +456,10 @@ namespace SicarianInfiltrator
         public ProjectileImpactExplosion projectileImpactExplosion;
         public ProjectileSimple projectileSimple;
         public Dictionary<Collider, HurtBox> keyValuePairs = new Dictionary<Collider, HurtBox>();
+        public ChildLocator childLocator;
+        public GameObject gun;
+        public GameObject grenade;
+
         public override void OnEnter()
         {
             base.OnEnter();
@@ -433,6 +470,15 @@ namespace SicarianInfiltrator
             //projectileSimple = projectile.GetComponent<ProjectileSimple>();
             radius = projectileImpactExplosion ? projectileImpactExplosion.blastRadius : 0f;
             //startingVelocity = projectileSimple ? projectileSimple.desiredForwardSpeed : 0f;
+            PlayAnimation("LeftHand, Override", "SelectGrenade");
+            childLocator = modelLocator && modelLocator.modelTransform ? modelLocator.modelTransform.GetComponent<ChildLocator>() : null;
+            if (childLocator)
+            {
+                gun = childLocator.FindChild("Gun").gameObject;
+                grenade = childLocator.FindChild("Grenade").gameObject;
+            }
+            if (gun) gun.SetActive(false);
+            if (grenade) grenade.SetActive(true);
         }
         public void PlaceIndicator(Ray ray)
         {
@@ -489,6 +535,9 @@ namespace SicarianInfiltrator
         {
             fire = false;
             Ray ray = GetAimRay();
+            Util.PlaySound(throwSound, base.gameObject);
+            PlayAnimation("LeftHand, Override", "ThrowGrenade");
+            if (grenade) grenade.SetActive(false);
             PlaceIndicator(ray);
             if (base.isAuthority)
             {
@@ -531,6 +580,8 @@ namespace SicarianInfiltrator
         public override void OnExit()
         {
             base.OnExit();
+            if (gun) gun.SetActive(true);
+            if (grenade) grenade.SetActive(false);
             //if (indicator) Destroy(indicator);
         }
         public override InterruptPriority GetMinimumInterruptPriority()

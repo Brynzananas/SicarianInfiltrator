@@ -24,9 +24,9 @@ namespace SicarianInfiltrator
         public static float MaxShortDamageMultipler => UntargetableConfig.shortDamageMultiplier.Value;
         public static float MaxShortDamageMaxMultipler => UntargetableConfig.shortDamageMaxMultiplier.Value;
         public static float MaxShortDamageTotal => UntargetableConfig.shortDamageTotalMultiplier.Value;
-        public static float ShockingTimer => FireFlechetConfig.shockingTimer.Value;
-        public static float ShockDuration => FireFlechetConfig.shockingDuration.Value;
-        public static int ShockAmmount => FireFlechetConfig.shockingAmount.Value;
+        public static float ShockingTimer => FireFlechetConfig.electrifyingTimer.Value;
+        public static float ShockDuration => FireFlechetConfig.shockDuration.Value;
+        public static int ShockAmmount => FireFlechetConfig.electrifyingAmount.Value;
         private static void HealthComponent_TakeDamageProcess(On.RoR2.HealthComponent.orig_TakeDamageProcess orig, HealthComponent self, DamageInfo damageInfo)
         {
             CharacterBody attackerBody = damageInfo.attacker ? damageInfo.attacker.GetComponent<CharacterBody>() : null;
@@ -51,20 +51,20 @@ namespace SicarianInfiltrator
             {
                 List<CharacterBody.TimedBuff> timedBuffs = self.body.timedBuffs;
                 foreach (CharacterBody.TimedBuff timedBuff in timedBuffs) timedBuff.timer = timedBuff.totalDuration;
-                self.body.AddTimedBuff(Assets.Shocking, ShockingTimer);
+                self.body.AddTimedBuff(Assets.Electrifying, ShockingTimer);
             }
         }
         private static void CharacterBody_HandleCascadingBuffs(On.RoR2.CharacterBody.orig_HandleCascadingBuffs orig, RoR2.CharacterBody self)
         {
             orig(self);
-            if (self.GetBuffCount(Assets.Shocking) >= ShockAmmount)
+            if (self.GetBuffCount(Assets.Electrifying) >= ShockAmmount)
             {
                 SetStateOnHurt setStateOnHurt = self.GetComponent<SetStateOnHurt>();
                 if (setStateOnHurt != null)
                 {
                     setStateOnHurt.SetShock(ShockDuration);
                 }
-                self.SetBuffCount(Assets.Shocking.buffIndex, 0);
+                self.SetBuffCount(Assets.Electrifying.buffIndex, 0);
             }
         }
     }

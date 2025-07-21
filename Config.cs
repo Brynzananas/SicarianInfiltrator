@@ -4,26 +4,41 @@ using System.Text;
 using static SicarianInfiltrator.Main;
 using static SicarianInfiltrator.Keywords;
 using BepInEx.Configuration;
+using RoR2.CharacterAI;
 
 namespace SicarianInfiltrator
 {
     public class FireFlechetConfig
     {
-        public static ConfigEntry<float> damageCoefficient = configFile.Bind(FireFlechetName, DamageCoefficientName, 0.4f, "").RegisterConfig();
+        public static ConfigEntry<float> damageCoefficient = configFile.Bind(FireFlechetName, DamageCoefficientName, 0.7f, "").RegisterConfig();
         public static ConfigEntry<float> procCoefficient = configFile.Bind(FireFlechetName, ProcCoefficientName, 1f, "").RegisterConfig();
-        public static ConfigEntry<float> shockingTimer = configFile.Bind(FireFlechetName, "Shocking Timer", 3f, "").RegisterConfig();
-        public static ConfigEntry<int> shockingAmount = configFile.Bind(FireFlechetName, "Shocking Amount", 25, "Amount needed to Shock the target").RegisterConfig();
-        public static ConfigEntry<float> shockingDuration = configFile.Bind(FireFlechetName, "Shock Duration", 1f, "").RegisterConfig();
-        public static ConfigEntry<float> maxDistance = configFile.Bind(FireFlechetName, "Dart Distance", 128f, "").RegisterConfig();
+        public static ConfigEntry<float> electrifyingTimer = configFile.Bind(FireFlechetName, "Shocking Timer", 3f, "").RegisterConfig();
+        public static ConfigEntry<int> electrifyingAmount = configFile.Bind(FireFlechetName, "Shocking Amount", 25, "Amount needed to Shock the target").RegisterConfig();
+        public static ConfigEntry<float> shockDuration = configFile.Bind(FireFlechetName, "Shock Duration", 1f, "").RegisterConfig();
+        public static ConfigEntry<float> maxDistance = configFile.Bind(FireFlechetName, "Dart Distance", 128f, "").RegisterConfig(ApplyAiRange);
         public static ConfigEntry<float> spreadBloomValue = configFile.Bind(FireFlechetName, "Spread Bloom", 0.25f, "").RegisterConfig();
         public static ConfigEntry<float> force = configFile.Bind(FireFlechetName, "Force", 30f, "").RegisterConfig();
         public static ConfigEntry<float> baseDuration = configFile.Bind(FireFlechetName, BaseDurationName, 0.2f, "").RegisterConfig();
         public static ConfigEntry<float> fireRateIncreaseOverTime = configFile.Bind(FireFlechetName, "Fire Rate Increase Over Time Rate", 2f, "").RegisterConfig();
-        public static ConfigEntry<float> spreadIncreaseOverTime = configFile.Bind(FireFlechetName, "Spread Increase Over Time Rate", 2f, "").RegisterConfig();
+        public static ConfigEntry<float> horizontalSpreadIncreaseOverTime = configFile.Bind(FireFlechetName, "Horizontal Spread Increase Over Time Rate", 2f, "").RegisterConfig();
+        public static ConfigEntry<float> verticalSpreadIncreaseOverTime = configFile.Bind(FireFlechetName, "Vertical Spread Increase Over Time Rate", 2f, "").RegisterConfig();
         public static ConfigEntry<float> maxIncreasedFireRate = configFile.Bind(FireFlechetName, "Max Fire Rate Increase Over Time", 15f, "").RegisterConfig();
-        public static ConfigEntry<float> maxIncreasedSpread = configFile.Bind(FireFlechetName, "Max Spread Increase Over Time", 3f, "").RegisterConfig();
+        public static ConfigEntry<float> maxIncreasedHorizontalSpread = configFile.Bind(FireFlechetName, "Max Horizontal Spread Increase Over Time", 3f, "").RegisterConfig();
+        public static ConfigEntry<float> maxIncreasedVerticalSpread = configFile.Bind(FireFlechetName, "Max Vertical Spread Increase Over Time", 1f, "").RegisterConfig();
         public static ConfigEntry<float> minSpread = configFile.Bind(FireFlechetName, "Min Spread", 3f, "").RegisterConfig();
         public static ConfigEntry<int> bulletCount = configFile.Bind(FireFlechetName, "Bullet Count", 1, "").RegisterConfig();
+        public static void ApplyAiRange(ConfigEntry<float> configEntry)
+        {
+            //if (configEntry == null) return;
+            AISkillDriver aISkillDriver = Assets.AISkillDrivers[3];
+            aISkillDriver.maxDistance = configEntry.Value / 2f;
+            configEntry.SettingChanged += ConfigEntry_SettingChanged;
+            void ConfigEntry_SettingChanged(object sender, EventArgs e)
+            {
+                AISkillDriver aISkillDriver = Assets.AISkillDrivers[3];
+                aISkillDriver.maxDistance = configEntry.Value / 2f;
+            }
+        }
     }
     public class TaserGoadConfig
     {
@@ -56,7 +71,19 @@ namespace SicarianInfiltrator
     {
         public static ConfigEntry<float> damageCoefficient = configFile.Bind(ThrowARCGrenadeName, DamageCoefficientName, 10f, "").RegisterConfig();
         public static ConfigEntry<float> baseDuration = configFile.Bind(ThrowARCGrenadeName, BaseDurationName, 0.4f, "").RegisterConfig();
-        public static ConfigEntry<float> baseDistance = configFile.Bind(ThrowARCGrenadeName, "Distance", 48f, "").RegisterConfig();
+        public static ConfigEntry<float> baseDistance = configFile.Bind(ThrowARCGrenadeName, "Distance", 48f, "").RegisterConfig(ApplyAiRange);
+        public static void ApplyAiRange(ConfigEntry<float> configEntry)
+        {
+            //if (configEntry == null) return;
+            AISkillDriver aISkillDriver = Assets.AISkillDrivers[0];
+            aISkillDriver.maxDistance = configEntry.Value;
+            configEntry.SettingChanged += ConfigEntry_SettingChanged;
+            void ConfigEntry_SettingChanged(object sender, EventArgs e)
+            {
+                AISkillDriver aISkillDriver = Assets.AISkillDrivers[0];
+                aISkillDriver.maxDistance = configEntry.Value;
+            }
+        }
     }
     public class UntargetableConfig
     {

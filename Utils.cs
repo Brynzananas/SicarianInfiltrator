@@ -91,14 +91,23 @@ namespace SicarianInfiltrator
     public static class Keywords
     {
         public const string BodyName = "Sicarian Infiltrator";
+        public const string BodyNameRu = "Сикариан Диверсант";
         public const string UntargetableName = "Untargetable";
+        public const string UntargetableNameRu = "Нецелевой";
         public const string FireFlechetName = "Flechet";
+        public const string FireFlechetNameRu = "Флешет";
         public const string SwingTaserName = "Taser Goad";
+        public const string SwingTaserNameRu = "Удар Электрошокером";
         public const string HelmetSlamName = "Dome Helmet Slam";
+        public const string HelmetSlamNameRu = "Грохот Купольным Шлемом";
         public const string ThrowARCGrenadeName = "ARC Grenade";
+        public const string ThrowARCGrenadeNameRu = "ARC Граната";
         public const string DamageCoefficientName = "Damage Coefficient";
+        public const string DamageCoefficientNameRu = "Damage Coefficient";
         public const string ProcCoefficientName = "Proc Coefficient";
+        public const string ProcCoefficientNameRu = "Proc Coefficient";
         public const string BaseDurationName = "Base Duration";
+        public const string BaseDurationNameRu = "Base Duration";
     }
     public static class Extensions
     {
@@ -132,20 +141,44 @@ namespace SicarianInfiltrator
             ContentPacks.skills.Add(skillDef);
             return skillDef;
         }
-
         public static T RegisterSkillFamily<T>(this T skillFamily) where T : SkillFamily
         {
+            return skillFamily.RegisterSkillFamily<T>(null);
+        }
+        public static T RegisterSkillFamily<T>(this T skillFamily, Action onContentRegistered) where T : SkillFamily
+        {
             ContentPacks.skillFamilies.Add(skillFamily);
+            onContentRegistered?.Invoke();
             return skillFamily;
+        }
+        public static T RegisterSkinDef<T>(this T skinDef) where T : SkillFamily
+        {
+            return skinDef.RegisterSkinDef<T>(null);
+        }
+        public static T RegisterSkinDef<T>(this T skinDef, Action onContentRegistered) where T : SkillFamily
+        {
+            ContentPacks.skillFamilies.Add(skinDef);
+            onContentRegistered?.Invoke();
+            return skinDef;
         }
         public static GameObject RegisterCharacterBody(this GameObject body)
         {
+            return body.RegisterCharacterBody(null);
+        }
+        public static GameObject RegisterCharacterBody(this GameObject body, Action onContentRegistered)
+        {
             ContentPacks.bodies.Add(body);
+            onContentRegistered?.Invoke();
             return body;
         }
         public static T RegisterSurvivor<T>(this T survivorDef) where T : SurvivorDef
         {
+            return survivorDef.RegisterSurvivor(null);
+        }
+        public static T RegisterSurvivor<T>(this T survivorDef, Action onContentRegistered) where T : SurvivorDef
+        {
             ContentPacks.survivors.Add(survivorDef);
+            onContentRegistered?.Invoke();
             return survivorDef;
         }
         public static T RegisterBuffDef<T>(this T buffDef) where T : BuffDef
@@ -153,7 +186,27 @@ namespace SicarianInfiltrator
             ContentPacks.buffs.Add(buffDef);
             return buffDef;
         }
+        public static T RegisterBuffDef<T>(this T buffDef, Action onContentRegistered) where T : BuffDef
+        {
+            ContentPacks.buffs.Add(buffDef);
+            onContentRegistered?.Invoke();
+            return buffDef;
+        }
+        public static GameObject RegisterCharacterMaster(this GameObject master)
+        {
+            return master.RegisterCharacterMaster(null);
+        }
+        public static GameObject RegisterCharacterMaster(this GameObject master, Action onContentRegistered)
+        {
+            ContentPacks.masters.Add(master);
+            onContentRegistered?.Invoke();
+            return master;
+        }
         public static GameObject RegisterProjectile(this GameObject projectile, string name)
+        {
+            return projectile.RegisterProjectile(name, null);
+        }
+        public static GameObject RegisterProjectile(this GameObject projectile, string name, Action onContentRegistered)
         {
             Assets.actualNames.Add(projectile.name, name);
             string sectionName = name;
@@ -190,6 +243,7 @@ namespace SicarianInfiltrator
             }
             ContentPacks.projectiles.Add(projectile);
             ContentPacks.networkPrefabs.Add(projectile);
+            onContentRegistered?.Invoke();
             return projectile;
         }
         public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
@@ -198,9 +252,29 @@ namespace SicarianInfiltrator
         }
         public static ConfigEntry<T> RegisterConfig<T>(this ConfigEntry<T> configEntry)
         {
+            return configEntry.RegisterConfig(null);
+        }
+        public static ConfigEntry<T> RegisterConfig<T>(this ConfigEntry<T> configEntry, Action<ConfigEntry<T>> onContentRegistered)
+        {
             if(Main.riskOfOptionsEnabled)
             ModCompatabilities.RiskOfOptionsCompatability.AddConfig(configEntry);
+            onContentRegistered?.Invoke(configEntry);
             return configEntry;
+        }
+        public static T CopyComponent<T>(this GameObject destination, T original) where T : Component
+        {
+            System.Type type = original.GetType();
+            Component copy = destination.AddComponent(type);
+            System.Reflection.FieldInfo[] fields = type.GetFields();
+            foreach (System.Reflection.FieldInfo field in fields)
+            {
+                field.SetValue(copy, field.GetValue(original));
+            }
+            return copy as T;
+        }
+        public static void SetStateToMain(this EntityStateMachine entityStateMachine)
+        {
+            entityStateMachine.SetState(EntityStateCatalog.InstantiateState(entityStateMachine.mainStateType.stateType));
         }
     }
 }
