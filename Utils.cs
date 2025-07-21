@@ -157,7 +157,7 @@ namespace SicarianInfiltrator
         }
         public static T RegisterSkinDef<T>(this T skinDef, Action onContentRegistered) where T : SkillFamily
         {
-            ContentPacks.skillFamilies.Add(stskinDefate);
+            ContentPacks.skillFamilies.Add(skinDef);
             onContentRegistered?.Invoke();
             return skinDef;
         }
