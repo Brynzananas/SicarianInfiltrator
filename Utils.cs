@@ -157,9 +157,15 @@ namespace SicarianInfiltrator
         }
         public static T RegisterSkinDef<T>(this T skinDef, Action onContentRegistered) where T : SkillFamily
         {
-            ContentPacks.skillFamilies.Add(skinDef);
+            ContentPacks.skillFamilies.Add(stskinDefate);
             onContentRegistered?.Invoke();
             return skinDef;
+        }
+        public static T RegisterState<T>(this T state, Action onContentRegistered = null) where T : Type
+        {
+            ContentPacks.states.Add(state);
+            onContentRegistered?.Invoke();
+            return state;
         }
         public static GameObject RegisterCharacterBody(this GameObject body)
         {

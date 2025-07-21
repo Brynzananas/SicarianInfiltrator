@@ -102,6 +102,11 @@ namespace SicarianInfiltrator
             Electrifying = assetBundle.LoadAsset<BuffDef>("Assets/SicarianInfiltrator/Buffs/Electrifying.asset").RegisterBuffDef();
             ShortDamage = assetBundle.LoadAsset<BuffDef>("Assets/SicarianInfiltrator/Buffs/ShortDamage.asset").RegisterBuffDef();
             ARCGrenadeProjectile = assetBundle.LoadAsset<GameObject>("Assets/SicarianInfiltrator/Projectiles/ARCGrenade.prefab").RegisterProjectile(ThrowARCGrenadeName);
+            typeof(FireFlechet).RegisterState();
+            typeof(SwingTaserGoad).RegisterState();
+            typeof(SwingTaserGoadSecond).RegisterState();
+            typeof(DomeStomp).RegisterState();
+            typeof(ThrowARCGrenade).RegisterState();
         }
     }
 }
