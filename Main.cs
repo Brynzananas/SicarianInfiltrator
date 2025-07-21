@@ -17,8 +17,7 @@ namespace SicarianInfiltrator
 {
     [BepInPlugin(ModGuid, ModName, ModVer)]
     [BepInDependency(R2API.R2API.PluginGUID, R2API.R2API.PluginVersion)]
-    [BepInDependency(R2API.SkillsAPI.PluginGUID, SkillsAPI.PluginVersion)]
-    [BepInDependency(R2API.SkillsAPI.PluginGUID, SkillsAPI.PluginVersion)]
+    [BepInDependency(R2API.DamageAPI.PluginGUID, DamageAPI.PluginVersion)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.EveryoneNeedSameModVersion)]
     //[R2APISubmoduleDependency(nameof(CommandHelper))]
     [System.Serializable]
