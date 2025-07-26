@@ -383,7 +383,10 @@ namespace SicarianInfiltrator
             //PlayAnimation("FullBody, Additive", "FlipExit");
             PlayAnimation("FullBody, Additive", "BufferEmpty", "Slam.playbackRate", 0.1f, 0f);
             if (NetworkServer.active)
+            {
                 characterBody.RemoveBuff(JunkContent.Buffs.IgnoreFallDamage);
+                characterBody.AddTimedBuff(JunkContent.Buffs.IgnoreFallDamage, 1f);
+            }
             if (characterMotor)
             {
                 if(isAuthority) characterMotor.onHitGroundAuthority -= CharacterMotor_onHitGroundAuthority;
