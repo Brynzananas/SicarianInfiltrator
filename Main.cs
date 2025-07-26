@@ -18,8 +18,9 @@ namespace SicarianInfiltrator
     [BepInPlugin(ModGuid, ModName, ModVer)]
     [BepInDependency(R2API.R2API.PluginGUID, R2API.R2API.PluginVersion)]
     [BepInDependency(R2API.DamageAPI.PluginGUID, DamageAPI.PluginVersion)]
+    [BepInDependency(ModCompatabilities.EmoteCompatAbility.customEmotesApiGUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(ModCompatabilities.RiskOfOptionsCompatability.riskOfOptionsGUID, BepInDependency.DependencyFlags.SoftDependency)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.EveryoneNeedSameModVersion)]
-    //[R2APISubmoduleDependency(nameof(CommandHelper))]
     [System.Serializable]
     public class Main : BaseUnityPlugin
     {
