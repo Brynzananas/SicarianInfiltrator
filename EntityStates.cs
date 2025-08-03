@@ -256,7 +256,7 @@ namespace SicarianInfiltrator
         public override void OnExit()
         {
             base.OnExit();
-            PlayAnimation("UpperBody, Override", "BufferEmpty", "Slash.playbackRate", 1f, 1f);
+            PlayAnimation("UpperBody, Override", "BufferEmpty", "Slash.playbackRate", 1f, 0.5f);
         }
         public override void SetNextState()
         {
@@ -305,8 +305,6 @@ namespace SicarianInfiltrator
         public static BlastAttack.FalloffModel slamDamageFalloff => HelmetSlamConfig.slamDamageFalloff.Value;
         public static string enterSound = "Play_loader_R_variant_activate";
         public static string exitSound = "Play_loader_R_variant_slam";
-        public float gravityScaleDelta;
-        public float walkSpeedPenaltyDelta;
         public bool fire = true;
         public GameObject indicator;
         public float indicatorAcceleration;
@@ -353,11 +351,9 @@ namespace SicarianInfiltrator
                 }
                 if(NetworkServer.active)
                 characterBody.AddBuff(JunkContent.Buffs.IgnoreFallDamage);
-                gravityScaleDelta = characterMotor.gravityScale;
-                characterMotor.gravityScale = gravityScale;
+                characterMotor.gravityScale *= gravityScale;
                 characterMotor.airControl *= attackSpeedStat;
-                walkSpeedPenaltyDelta = characterMotor.walkSpeedPenaltyCoefficient;
-                characterMotor.walkSpeedPenaltyCoefficient = walkSpeedPenalty;
+                characterMotor.walkSpeedPenaltyCoefficient *= walkSpeedPenalty;
             }
             else if(isAuthority)
             {
@@ -391,8 +387,8 @@ namespace SicarianInfiltrator
             {
                 if(isAuthority) characterMotor.onHitGroundAuthority -= CharacterMotor_onHitGroundAuthority;
                 characterMotor.airControl /= attackSpeedStat;
-                characterMotor.gravityScale = gravityScaleDelta;
-                characterMotor.walkSpeedPenaltyCoefficient = walkSpeedPenaltyDelta;
+                characterMotor.gravityScale /= gravityScale;
+                characterMotor.walkSpeedPenaltyCoefficient /= walkSpeedPenalty;
             }
             if(indicator) Destroy(indicator);
         }
@@ -438,7 +434,7 @@ namespace SicarianInfiltrator
             return InterruptPriority.Skill;
         }
     }
-
+    
     public class ThrowARCGrenade : BaseSkillState
     {
         public static float damageCoefficient => ThrowARCGrenadeConfig.damageCoefficient.Value;
@@ -447,6 +443,7 @@ namespace SicarianInfiltrator
         public static float indicatorSmoothTime = 0.2f;
         public static GameObject projectile = Assets.ARCGrenadeProjectile;
         public static string throwSound = "Play_commando_M2_grenade_throw";
+        public static Dictionary<GameObject, List<ThrowARCGrenade>> throwARCGrenades = new Dictionary<GameObject, List<ThrowARCGrenade>>();
         public bool fire = true;
         public GameObject indicator;
         public float stopwatch;
@@ -486,6 +483,8 @@ namespace SicarianInfiltrator
         public void PlaceIndicator(Ray ray)
         {
             if (indicator == null) return;
+            float scale = Mathf.SmoothDamp(transform.localScale.x, radius, ref indicatorAcceleration, indicatorSmoothTime * Time.deltaTime);
+            indicator.transform.localScale = new Vector3(scale, scale, scale);
             RaycastHit[] raycastHits = Physics.RaycastAll(ray, baseDistance, LayerIndex.world.mask + LayerIndex.entityPrecise.mask, QueryTriggerInteraction.UseGlobal);
             bool hit = false;
             distance = baseDistance;
@@ -564,8 +563,6 @@ namespace SicarianInfiltrator
             base.Update();
             if (!fire) return;
             Ray ray = GetAimRay();
-            float scale = Mathf.SmoothDamp(transform.localScale.x, radius, ref indicatorAcceleration, indicatorSmoothTime * Time.deltaTime);
-            indicator.transform.localScale = new Vector3(scale, scale, scale);
             PlaceIndicator(ray);
         }
         public override void FixedUpdate()
@@ -585,7 +582,7 @@ namespace SicarianInfiltrator
             base.OnExit();
             if (gun) gun.SetActive(true);
             if (grenade) grenade.SetActive(false);
-            //if (indicator) Destroy(indicator);
+            throwARCGrenades.Remove(gameObject);
         }
         public override InterruptPriority GetMinimumInterruptPriority()
         {

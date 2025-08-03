@@ -18,15 +18,15 @@ namespace SicarianInfiltrator
     [BepInPlugin(ModGuid, ModName, ModVer)]
     [BepInDependency(R2API.R2API.PluginGUID, R2API.R2API.PluginVersion)]
     [BepInDependency(R2API.DamageAPI.PluginGUID, DamageAPI.PluginVersion)]
-    [BepInDependency(ModCompatabilities.EmoteCompatAbility.customEmotesApiGUID, BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency(ModCompatabilities.RiskOfOptionsCompatability.riskOfOptionsGUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(ModCompatabilities.EmoteCompatability.GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(ModCompatabilities.RiskOfOptionsCompatability.GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.EveryoneNeedSameModVersion)]
     [System.Serializable]
     public class Main : BaseUnityPlugin
     {
         public const string ModGuid = "com.brynzananas.sicarianinfiltrator";
         public const string ModName = "Sicarian Infiltrator";
-        public const string ModVer = "1.0.0";
+        public const string ModVer = "1.0.2";
         public static bool emotesEnabled;
         public static bool riskOfOptionsEnabled;
         public static PluginInfo PluginInfo { get; private set; }
